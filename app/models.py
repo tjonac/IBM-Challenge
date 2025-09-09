@@ -32,6 +32,7 @@ class Reports(SQLModel, table=True):
     summary: str | None = None
     priority: int | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
+    status: str | None = None
 
 class Report(Reports, table=True):
     id: int | None = Field(primary_key=True)
@@ -41,3 +42,4 @@ class Report(Reports, table=True):
     summary: str | None = None
     priority: int | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
+    status: str | None = None

@@ -55,20 +55,34 @@ async def handle_get_user_information(client_id: str, session: SessionDep) -> Ge
 
 
 def handle_get_report(client_id: str, report_id: str, session: SessionDep)->GetReportResponse:
-    statement = select(Call.id,Call.report_id, Call.sentiment, Call.timestamp).where(Call.client_id == client_id).order_by(desc(Call.timestamp))
+    statement = select(Call.report_id, Call.sentiment,Call.timestamp).where(Call.report_id == report_id).order_by(desc(Call.timestamp))
+    statement_report = select(Report.id, Report.summary, Report.status, Report.timestamp).where(Report.id == report_id)
     result =  session.exec(statement).all()
+    result_report =  session.exec(statement).all()
 
-    calls = [str(row[0]) for row in result if row[0] is not None]
-    reports = [str(row[1]) for row in result if row[1] is not None]
-    last_call_sentiment = result[0][2] if result[0][2] is not None else "neutral"
+    status = result_report[0][2] if result_report[0][2] is not None else "open"
+    summary = result_report[0][1] if result_report[0][1] is not None else ""
+    closed_date = result_report[0][3].timestamp() if result_report[0][2]=="closed" else None
+
     return GetUserInfoResponse(
-        calls=calls,
-        reports=reports,
-        last_call_sentiment=last_call_sentiment
+        status=status,
+        summary=summary,
+        closed_date=closed_date
     )
 
-def handle_get_call_transcript(client_id: str, call_id: str)->GetCallTrancsriptionResponse:
-    return 0
+def handle_get_call_transcript(client_id: str, call_id: str, session: SessionDep)->GetCallTrancsriptionResponse:
+    statement = select(Call.id, Call.transcript).where(Call.id == call_id).order_by(desc(Call.timestamp))
+    result =  session.exec(statement).all()
+
+    client_id = client_id
+    call_id = call_id
+    transcription = result[0][1] if result[0][1] is not None else ""
+
+    return GetUserInfoResponse(
+        client_id=client_id,
+        call_id=call_id,
+        transcription=transcription
+    )
 
 def handle_create_report(request: CreateReportRequest) -> CreateReportResponse:
     return 0

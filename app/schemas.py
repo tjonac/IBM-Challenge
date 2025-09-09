@@ -4,7 +4,6 @@ from typing import Literal, Optional, List
 class GetReportResponse(BaseModel):
     status: Literal["closed", "in progress", "open"]
     summary: str
-    count: int
     closed_date: Optional[int]
 
 class GetCallTrancsriptionResponse(BaseModel):

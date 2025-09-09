@@ -1,18 +1,16 @@
 from pydantic import BaseModel
 from typing import Literal, Optional, List
 
-class GetReportRequest(BaseModel):
-    client_id: str
-    report_id: str
-
 class GetReportResponse(BaseModel):
     status: Literal["closed", "in progress", "open"]
     summary: str
     count: int
     closed_date: Optional[int]
 
-class GetUserInfoRequest(BaseModel):
+class GetCallTrancsriptionResponse(BaseModel):
     client_id: str
+    call_id: str
+    transcription: str
 
 class GetUserInfoResponse(BaseModel):
     calls: List[str]

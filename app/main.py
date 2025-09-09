@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api import (
+from app.handlers import (
     handle_get_user_information, 
     handle_create_report,
     handle_get_report,

@@ -17,7 +17,7 @@ def get_user_information(client_id: str):
 def get_user_information(client_id: str, report_id: str):
     return handle_get_report(client_id, report_id)
 
-@app.get("/user")
+@app.get("/call_transcript")
 def get_call_transcript(client_id: str, call_id: str):
     return handle_get_call_transcript(client_id, call_id)
 

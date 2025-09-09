@@ -8,6 +8,7 @@ class Calls(SQLModel, table=True):
     id: int | None = Field(primary_key=True)
     operator: str = Field(index=True)
     client_id: int | None = Field(index=True)
+    report_id: int | None = Field(index=True)
     transcript: str | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
     sentiment: str | None = None
@@ -17,6 +18,7 @@ class Call(Calls):
     id: int | None = Field(primary_key=True)
     operator: str = Field(index=True)
     client_id: int | None = Field(index=True)
+    report_id: int | None = Field(index=True)
     transcript: str | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
     sentiment: str | None = None

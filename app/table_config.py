@@ -2,6 +2,9 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Session, SQLModel, create_engine
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SQLITE_FILE_NAME = os.getenv("SQLITE_FILE_NAME")
 SQLITE_URL = f"sqlite:///{SQLITE_FILE_NAME}"

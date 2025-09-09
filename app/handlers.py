@@ -13,10 +13,13 @@ from app.schemas import (
 )
 from google import genai
 from google.genai import types
-from app.models import Call, Report
+from app.models import Calls, Reports
 import json
 import re
 import uuid
+from dotenv import load_dotenv
+
+load_dotenv()
 
 client = genai.Client()
 
@@ -39,27 +42,27 @@ Requirements:
 
 """
 
+import json
+
 def extract_json(text: str):
     """
-    Extract the first JSON object found in a string and return it as a Python dict.
-    If no valid JSON is found, return None.
+    Extrae el primer JSON válido encontrado en un string y lo devuelve como dict.
+    Retorna None si no se encuentra ningún JSON válido.
     """
-    # Regex to capture {...} including nested braces
-    match = re.search(r'\{(?:[^{}]|(?R))*\}', text, re.DOTALL)
-    if not match:
-        return None
-    
-    json_str = match.group(0)
+    start = text.find("{")
+    end = text.find("}")
+    result = text[start:end+1]
+
+    print(result)
+
     try:
-        return json.loads(json_str)
+        return json.loads(result)
     except json.JSONDecodeError:
         return None
 
 
-
-@staticmethod
-async def handle_get_user_information(client_id: str, session: SessionDep) -> GetUserInfoResponse:
-    statement = select(Call.id,Call.report_id, Call.sentiment, Call.timestamp).where(Call.client_id == client_id).order_by(desc(Call.timestamp))
+def handle_get_user_information(client_id: str, session: SessionDep) -> GetUserInfoResponse:
+    statement = select(Calls.id,Calls.report_id, Calls.sentiment, Calls.timestamp).where(Calls.client_id == client_id).order_by(desc(Calls.timestamp))
     result =  session.exec(statement).all()
 
     calls = [str(row[0]) for row in result if row[0] is not None]
@@ -73,10 +76,10 @@ async def handle_get_user_information(client_id: str, session: SessionDep) -> Ge
 
 
 def handle_get_report(client_id: str, report_id: str, session: SessionDep)->GetReportResponse:
-    statement = select(Call.report_id, Call.sentiment,Call.timestamp).where(Call.report_id == report_id).order_by(desc(Call.timestamp))
-    statement_report = select(Report.id, Report.summary, Report.status, Report.timestamp).where(Report.id == report_id)
+    statement = select(Calls.report_id, Calls.sentiment,Calls.timestamp).where(Calls.report_id == report_id).order_by(desc(Calls.timestamp))
+    statement_report = select(Reports.id, Reports.summary, Reports.status, Reports.timestamp).where(Reports.id == report_id)
     result =  session.exec(statement).all()
-    result_report =  session.exec(statement).all()
+    result_report =  session.exec(statement_report).all()
 
     status = result_report[0][2] if result_report[0][2] is not None else "open"
     summary = result_report[0][1] if result_report[0][1] is not None else ""
@@ -89,14 +92,14 @@ def handle_get_report(client_id: str, report_id: str, session: SessionDep)->GetR
     )
 
 def handle_get_call_transcript(client_id: str, call_id: str, session: SessionDep)->GetCallTrancsriptionResponse:
-    statement = select(Call.id, Call.transcript).where(Call.id == call_id).order_by(desc(Call.timestamp))
+    statement = select(Calls.id, Calls.transcript).where(Calls.id == call_id).order_by(desc(Calls.timestamp))
     result =  session.exec(statement).all()
 
     client_id = client_id
     call_id = call_id
     transcription = result[0][1] if result[0][1] is not None else ""
 
-    return GetUserInfoResponse(
+    return GetCallTrancsriptionResponse(
         client_id=client_id,
         call_id=call_id,
         transcription=transcription
@@ -110,7 +113,7 @@ def handle_create_report(request: CreateReportRequest, session: SessionDep) -> C
 
     report_id = str(uuid.uuid4())
 
-    report_db = Report(
+    report_db = Reports(
         id=report_id,
         call_id=call_id,
         topic="hello",
@@ -130,6 +133,8 @@ def handle_create_report(request: CreateReportRequest, session: SessionDep) -> C
 
 def handle_create_call(request: CreateCallRequest, session: SessionDep) -> CreateCallResponse:
 
+    print(request)
+
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=METADATA_PROMPT.format(transcript = request.transcript),
@@ -138,11 +143,13 @@ def handle_create_call(request: CreateCallRequest, session: SessionDep) -> Creat
         ),
     )
     
+    print(response.text)
+
     metadata = extract_json(response.text)
 
     call_id = str(uuid.uuid4())
 
-    call_db = Call(
+    call_db = Calls(
         id= call_id,
         operator= request.operator,
         client_id =request.client_id,

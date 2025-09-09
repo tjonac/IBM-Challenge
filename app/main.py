@@ -3,9 +3,13 @@ from app.handlers import (
     handle_get_user_information, 
     handle_create_report,
     handle_get_report,
-    handle_get_call_transcript
+    handle_get_call_transcript,
+    handle_create_call
 )
-from app.schemas import CreateReportRequest
+from app.schemas import (
+    CreateReportRequest,
+    CreateCallRequest,
+)
 
 app = FastAPI()
 
@@ -24,3 +28,7 @@ def get_call_transcript(client_id: str, call_id: str):
 @app.post("/report")
 def create_report(request: CreateReportRequest):
     return handle_create_report(request)
+
+@app.post("/call")
+def create_report(request: CreateCallRequest):
+    return handle_create_call(request)

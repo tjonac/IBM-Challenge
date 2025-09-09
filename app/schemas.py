@@ -26,3 +26,12 @@ class CreateReportResponse(BaseModel):
     message: str
     report_id: str
 
+class CreateCallRequest(BaseModel):
+    client_id: str
+    transcript: str
+    operator: str
+
+class CreateCallResponse(BaseModel):
+    message: str
+    call_id: str
+

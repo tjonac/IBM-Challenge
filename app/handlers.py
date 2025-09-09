@@ -14,6 +14,9 @@ from app.schemas import (
 from google import genai
 from google.genai import types
 from app.models import Call, Report
+import json
+import re
+import uuid
 
 client = genai.Client()
 
@@ -36,7 +39,22 @@ Requirements:
 
 """
 
-print(response.text)
+def extract_json(text: str):
+    """
+    Extract the first JSON object found in a string and return it as a Python dict.
+    If no valid JSON is found, return None.
+    """
+    # Regex to capture {...} including nested braces
+    match = re.search(r'\{(?:[^{}]|(?R))*\}', text, re.DOTALL)
+    if not match:
+        return None
+    
+    json_str = match.group(0)
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        return None
+
 
 
 @staticmethod
@@ -84,10 +102,33 @@ def handle_get_call_transcript(client_id: str, call_id: str, session: SessionDep
         transcription=transcription
     )
 
-def handle_create_report(request: CreateReportRequest) -> CreateReportResponse:
-    return 0
+def handle_create_report(request: CreateReportRequest, session: SessionDep) -> CreateReportResponse:
 
-def handle_create_call(request: CreateCallRequest) -> CreateCallResponse:
+    client_id = request.client_id
+    summary = request.summary
+    call_id = request.call_id
+
+    report_id = str(uuid.uuid4())
+
+    report_db = Report(
+        id=report_id,
+        call_id=call_id,
+        topic="hello",
+        summary=summary,
+        client_id=client_id,
+        priority=1
+    )
+
+    session.add(report_db)
+    session.commit()
+    session.refresh(report_db)
+
+    return CreateReportResponse(
+        message="Report created sucesfully!",
+        report_id=report_id
+    )
+
+def handle_create_call(request: CreateCallRequest, session: SessionDep) -> CreateCallResponse:
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -96,8 +137,25 @@ def handle_create_call(request: CreateCallRequest) -> CreateCallResponse:
             thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
         ),
     )
-
     
+    metadata = extract_json(response.text)
 
+    call_id = str(uuid.uuid4())
 
-    return 0
+    call_db = Call(
+        id= call_id,
+        operator= request.operator,
+        client_id =request.client_id,
+        transcript=request.transcript,
+        sentiment=metadata.get("sentiment"),
+        call_target=metadata.get("call_target")
+    )
+
+    session.add(call_db)
+    session.commit()
+    session.refresh(call_db)
+
+    return CreateCallResponse(
+        message="Call uploaded sucesfully!!!",
+        call_id=call_id
+    )
